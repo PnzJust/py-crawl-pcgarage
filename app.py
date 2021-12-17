@@ -2,8 +2,8 @@ import requests, time, os, json, random
 from bs4 import BeautifulSoup
 
 
-def get_categories(url):
-    r = requests.get(url, headers=get_headers(), timeout=None)
+def get_categories(url, cookies):
+    r = requests.get(url, headers=get_headers(), cookies=cookies, timeout=None)
     soup = BeautifulSoup(r.text, "html.parser")
     all_categories = []
     resp = soup.find_all("ul", {"id": "top_menu"})[0]
@@ -11,12 +11,11 @@ def get_categories(url):
     for e in resp:
         for url in e.find_all('a'):
             all_categories.append(url.get('href'))
-    print (all_categories)
     return all_categories
 
 
-def get_pages(url, headers):
-    r = requests.get(url, headers=headers, timeout=None)
+def get_pages(url, cookies):
+    r = requests.get(url, headers= get_headers(), cookies=cookies, timeout=None)
     all_pages = set([url])
     if r.status_code != 200:
         return all_pages
@@ -82,6 +81,8 @@ def get_headers():
 def main():
     url = "https://www.pcgarage.ro/"
     json_file = "/tmp/crawl.json"
+    r = requests.get(url, headers=get_headers(), timeout=None)
+    COOKIES = r.cookies
 
     try:
         if os.path.isfile(json_file):
@@ -92,12 +93,12 @@ def main():
             os.system("echo {} > " + json_file)
             json_data = {}
 
-        categories = get_categories(url)
+        categories = get_categories(url, COOKIES)
         for category in categories:
-            pages = get_pages(category, get_headers())
+            pages = get_pages(category, COOKIES)
             for page in pages:
                 time.sleep(random.random())
-                r = requests.get(page, headers=get_headers(), timeout=None)
+                r = requests.get(page, headers=get_headers(), cookies=COOKIES, timeout=None)
                 if r.status_code != 200:
                     continue
                 soup = BeautifulSoup(r.text, "html.parser")
